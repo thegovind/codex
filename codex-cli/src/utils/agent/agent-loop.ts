@@ -1,6 +1,6 @@
 import type { ReviewDecision } from "./review.js";
+import type { ApplyPatchCommand, ApprovalPolicy } from "../../approvals.js";
 import type { AppConfig } from "../config.js";
-import type { ApplyPatchCommand, ApprovalPolicy } from "@lib/approvals.js";
 import type {
   ResponseFunctionToolCall,
   ResponseInputItem,
@@ -21,6 +21,12 @@ import {
 import { handleExecCommand } from "./handle-exec-command.js";
 import { randomUUID } from "node:crypto";
 import OpenAI, { APIConnectionTimeoutError } from "openai";
+
+// Wait time before retrying after rate limit errors (ms).
+const RATE_LIMIT_RETRY_WAIT_MS = parseInt(
+  process.env["OPENAI_RATE_LIMIT_RETRY_WAIT_MS"] || "15000",
+  10,
+);
 
 export type CommandConfirmation = {
   review: ReviewDecision;
@@ -479,8 +485,9 @@ export class AgentLoop {
         }
         // Send request to OpenAI with retry on timeout
         let stream;
+
         // Retry loop for transient errors. Up to MAX_RETRIES attempts.
-        const MAX_RETRIES = 3;
+        const MAX_RETRIES = 5;
         for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
           try {
             let reasoning: Reasoning | undefined;
@@ -589,7 +596,18 @@ export class AgentLoop {
               this.onLoading(false);
               return;
             }
+
             if (isRateLimit) {
+              if (attempt < MAX_RETRIES) {
+                log(
+                  `OpenAI rate limit exceeded (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RATE_LIMIT_RETRY_WAIT_MS} ms...`,
+                );
+                // eslint-disable-next-line no-await-in-loop
+                await new Promise((resolve) =>
+                  setTimeout(resolve, RATE_LIMIT_RETRY_WAIT_MS),
+                );
+                continue;
+              }
               this.onItem({
                 id: `error-${Date.now()}`,
                 type: "message",
@@ -597,13 +615,14 @@ export class AgentLoop {
                 content: [
                   {
                     type: "input_text",
-                    text: "⚠️  Rate limit reached while contacting OpenAI. Please wait a moment and try again.",
+                    text: "⚠️  Rate limit reached while contacting OpenAI. Please try again later.",
                   },
                 ],
               });
               this.onLoading(false);
               return;
             }
+
             const isClientError =
               (typeof status === "number" &&
                 status >= 400 &&
@@ -987,7 +1006,7 @@ You can:
 - Apply patches, run commands, and manage user approvals based on policy.
 - Work inside a sandboxed, git-backed workspace with rollback support.
 - Log telemetry so sessions can be replayed or inspected later.
-- More details on your functionally are available at \`codex --help\`
+- More details on your functionality are available at \`codex --help\`
 
 The Codex CLI is open-sourced. Don't confuse yourself with the old Codex language model built by OpenAI many moons ago (this is understandably top of mind for you!). Within this context, Codex refers to the open-source agentic coding interface.
 
@@ -999,7 +1018,7 @@ You MUST adhere to the following criteria when executing the task:
 - Working on the repo(s) in the current environment is allowed, even if they are proprietary.
 - Analyzing code for vulnerabilities is allowed.
 - Showing user code and tool call details is allowed.
-- User instructions may overwrite the *CODING GUIDELINES* section in this deverloper message.
+- User instructions may overwrite the *CODING GUIDELINES* section in this developer message.
 - Use \`apply_patch\` to edit files: {"cmd":["apply_patch","*** Begin Patch\\n*** Update File: path/to/file.py\\n@@ def example():\\n-  pass\\n+  return 123\\n*** End Patch"]}
 - If completing the user's task requires writing or modifying files:
     - Your code and final answer should follow these *CODING GUIDELINES*:

@@ -1,9 +1,14 @@
-#!/usr/bin/env -S NODE_OPTIONS=--no-deprecation node
+#!/usr/bin/env node
+import "dotenv/config";
+
+// Hack to suppress deprecation warnings (punycode)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(process as any).noDeprecation = true;
 
 import type { AppRollout } from "./app";
+import type { ApprovalPolicy } from "./approvals";
 import type { CommandConfirmation } from "./utils/agent/agent-loop";
 import type { AppConfig } from "./utils/config";
-import type { ApprovalPolicy } from "@lib/approvals";
 import type { ResponseItem } from "openai/resources/responses/responses";
 
 import App from "./app";
@@ -124,7 +129,7 @@ const cli = meow(
       fullContext: {
         type: "boolean",
         aliases: ["f"],
-        description: `Run in full-context editing approach. The model is given the whole code 
+        description: `Run in full-context editing approach. The model is given the whole code
           directory as context and performs changes in one go without acting.`,
       },
     },
@@ -254,7 +259,7 @@ if (quietMode) {
 const approvalPolicy: ApprovalPolicy =
   cli.flags.fullAuto || cli.flags.approvalMode === "full-auto"
     ? AutoApprovalMode.FULL_AUTO
-    : cli.flags.autoEdit
+    : cli.flags.autoEdit || cli.flags.approvalMode === "auto-edit"
     ? AutoApprovalMode.AUTO_EDIT
     : AutoApprovalMode.SUGGEST;
 

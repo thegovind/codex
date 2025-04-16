@@ -49,7 +49,7 @@ npm install -g @openai/codex
 
 Next, set your OpenAI API key as an environment variable:
 
-```bash
+```shell
 export OPENAI_API_KEY="your-api-key-here"
 ```
 
@@ -198,6 +198,7 @@ Below are a few bite‑size examples you can copy‑paste. Replace the text in q
 | 4   | `codex "Bulk‑rename *.jpeg → *.jpg with git mv"`                                | Safely renames files and updates imports/usages.                           |
 | 5   | `codex "Explain what this regex does: ^(?=.*[A-Z]).{8,}$"`                      | Outputs a step‑by‑step human explanation.                                  |
 | 6   | `codex "Carefully review this repo, and propose 3 high impact well-scoped PRs"` | Suggests impactful PRs in the current codebase.                            |
+| 7   | `codex "Look for vulnerabilities and create a security review report"`          | Finds and explains security bugs.                                          |
 
 ---
 
@@ -287,6 +288,13 @@ When these variables are set, Codex will automatically use Azure OpenAI instead 
 ## FAQ
 
 <details>
+<summary>OpenAI released a model called Codex in 2021 - is this related?</summary>
+
+In 2021, OpenAI released Codex, an AI system designed to generate code from natural language prompts. That original Codex model was deprecated as of March 2023 and is separate from the CLI tool.
+
+</details>
+
+<details>
 <summary>How do I stop Codex from touching my repo?</summary>
 
 Codex always runs in a **sandbox first**. If a proposed command or file change looks suspicious you can simply answer **n** when prompted and nothing happens to your working tree.
@@ -296,7 +304,7 @@ Codex always runs in a **sandbox first**. If a proposed command or file change l
 <details>
 <summary>Does it work on Windows?</summary>
 
-Not directly, it requires [Linux on Windows (WSL2)](https://learn.microsoft.com/en-us/windows/wsl/install) – Codex is tested on macOS and Linux with Node ≥ 22.
+Not directly. It requires [Windows Subsystem for Linux (WSL2)](https://learn.microsoft.com/en-us/windows/wsl/install) – Codex has been tested on macOS and Linux with Node ≥ 22.
 
 </details>
 
@@ -315,7 +323,7 @@ Codex also supports Azure OpenAI models. Configure your Azure OpenAI credentials
 
 This project is under active development and the code will likely change pretty significantly. We'll update this message once that's complete!
 
-More broadly We welcome contributions – whether you are opening your very first pull request or you’re a seasoned maintainer. At the same time we care about reliability and long‑term maintainability, so the bar for merging code is intentionally **high**. The guidelines below spell out what “high‑quality” means in practice and should make the whole process transparent and friendly.
+More broadly we welcome contributions – whether you are opening your very first pull request or you’re a seasoned maintainer. At the same time we care about reliability and long‑term maintainability, so the bar for merging code is intentionally **high**. The guidelines below spell out what “high‑quality” means in practice and should make the whole process transparent and friendly.
 
 ### Development workflow
 
@@ -323,7 +331,19 @@ More broadly We welcome contributions – whether you are opening your very firs
 - Keep your changes focused. Multiple unrelated fixes should be opened as separate PRs.
 - Use `npm run test:watch` during development for super‑fast feedback.
 - We use **Vitest** for unit tests, **ESLint** + **Prettier** for style, and **TypeScript** for type‑checking.
-- Make sure all your commits are signed off with `git commit -s ...`, see [Developer Certificate of Origin (DCO)](#developer-certificate-of-origin-dco) for more details.
+- Before pushing, run the full test/type/lint suite:
+
+  ```bash
+  npm test && npm run lint && npm run typecheck
+  ```
+
+- If you have **not** yet signed the Contributor License Agreement (CLA), add a PR comment containing the exact text
+
+  ```text
+  I have read the CLA Document and I hereby sign the CLA
+  ```
+
+  The CLA‑Assistant bot will turn the PR status green once all authors have signed.
 
 ```bash
 # Watch mode (tests rerun on change)
@@ -339,20 +359,15 @@ npm run format:fix
 
 ### Writing high‑impact code changes
 
-1. **Start with an issue.**
-   Open a new one or comment on an existing discussion so we can agree on the solution before code is written.
-2. **Add or update tests.**
-   Every new feature or bug‑fix should come with test coverage that fails before your change and passes afterwards. 100 % coverage is not required, but aim for meaningful assertions.
-3. **Document behaviour.**
-   If your change affects user‑facing behaviour, update the README, inline help (`codex --help`), or relevant example projects.
-4. **Keep commits atomic.**
-   Each commit should compile and the tests should pass. This makes reviews and potential rollbacks easier.
+1. **Start with an issue.** Open a new one or comment on an existing discussion so we can agree on the solution before code is written.
+2. **Add or update tests.** Every new feature or bug‑fix should come with test coverage that fails before your change and passes afterwards. 100 % coverage is not required, but aim for meaningful assertions.
+3. **Document behaviour.** If your change affects user‑facing behaviour, update the README, inline help (`codex --help`), or relevant example projects.
+4. **Keep commits atomic.** Each commit should compile and the tests should pass. This makes reviews and potential rollbacks easier.
 
 ### Opening a pull request
 
 - Fill in the PR template (or include similar information) – **What? Why? How?**
-- Run **all** checks locally (`npm test && npm run lint && npm run typecheck`).
-  CI failures that could have been caught locally slow down the process.
+- Run **all** checks locally (`npm test && npm run lint && npm run typecheck`). CI failures that could have been caught locally slow down the process.
 - Make sure your branch is up‑to‑date with `main` and that you have resolved merge conflicts.
 - Mark the PR as **Ready for review** only when you believe it is in a merge‑able state.
 
@@ -374,21 +389,20 @@ If you run into problems setting up the project, would like feedback on an idea,
 
 Together we can make Codex CLI an incredible tool. **Happy hacking!** :rocket:
 
-### Developer Certificate of Origin (DCO)
+### Contributor License Agreement (CLA)
 
-All commits **must** include a `Signed‑off‑by:` footer.  
-This one‑line self‑certification tells us you wrote the code and can contribute it under the repo’s license.
+All contributors **must** accept the CLA. The process is lightweight:
 
-#### How to sign (recommended flow)
+1. Open your pull request.
+2. Paste the following comment (or reply `recheck` if you’ve signed before):
 
-```bash
-# squash your work into ONE signed commit
-git reset --soft origin/main          # stage all changes
-git commit -s -m "Your concise message"
-git push --force-with-lease           # updates the PR
-```
+   ```text
+   I have read the CLA Document and I hereby sign the CLA
+   ```
 
-> We enforce **squash‑and‑merge only**, so a single signed commit is enough for the whole PR.
+3. The CLA‑Assistant bot records your signature in the repo and marks the status check as passed.
+
+No special Git commands, email attachments, or commit footers required.
 
 #### Quick fixes
 
@@ -398,6 +412,21 @@ git push --force-with-lease           # updates the PR
 | GitHub UI only    | Edit the commit message in the PR → add<br>`Signed-off-by: Your Name <email@example.com>` |
 
 The **DCO check** blocks merges until every commit in the PR carries the footer (with squash this is just the one).
+
+### Releasing `codex`
+
+To publish a new version of the CLI, run the release scripts defined in `codex-cli/package.json`:
+
+1. Open the `codex-cli` directory
+2. Make sure you're on a branch like `git checkout -b bump-version`
+3. Bump the version and `CLI_VERSION` to current datetime: `npm run release:version`
+4. Commit the version bump (with DCO sign-off):
+   ```bash
+   git add codex-cli/src/utils/session.ts codex-cli/package.json
+   git commit -s -m "chore(release): codex-cli v$(node -p \"require('./codex-cli/package.json').version\")"
+   ```
+5. Copy README, build, and publish to npm: `npm run release`
+6. Push to branch: `git push origin HEAD`
 
 ---
 
