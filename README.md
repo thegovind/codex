@@ -263,8 +263,7 @@ Codex supports the following environment variables:
 # OpenAI API Configuration
 OPENAI_API_KEY=sk-... # Your OpenAI API key
 
-# Azure OpenAI Configuration
-AZURE_OPENAI_API_KEY=     # Your Azure OpenAI API key
+# Azure OpenAI Configuration (uses Azure AD credential, no API key required)
 AZURE_OPENAI_ENDPOINT=    # Azure OpenAI endpoint URL (e.g., https://your-resource.openai.azure.com)
 AZURE_OPENAI_API_VERSION= # API version (defaults to "2024-02-01")
 AZURE_OPENAI_DEPLOYMENT=  # Optional deployment name for your model deployment
@@ -276,7 +275,6 @@ To use Azure OpenAI with Codex, set the following environment variables:
 
 ```bash
 # Set Azure OpenAI credentials
-export AZURE_OPENAI_API_KEY="your-azure-api-key"
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
 export AZURE_OPENAI_API_VERSION="your-api-version"
 export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"  # Optional
