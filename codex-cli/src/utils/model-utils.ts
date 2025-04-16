@@ -1,5 +1,5 @@
-import { OPENAI_API_KEY } from "./config";
-import OpenAI from "openai";
+import { OPENAI_API_KEY, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION, AZURE_OPENAI_DEPLOYMENT } from "./config";
+import OpenAI, { AzureOpenAI } from "openai";
 
 const MODEL_LIST_TIMEOUT_MS = 2_000; // 2 seconds
 export const RECOMMENDED_MODELS: Array<string> = ["o4-mini", "o3"];
@@ -15,6 +15,30 @@ export const RECOMMENDED_MODELS: Array<string> = ["o4-mini", "o3"];
 let modelsPromise: Promise<Array<string>> | null = null;
 
 async function fetchModels(): Promise<Array<string>> {
+  if (AZURE_OPENAI_ENDPOINT && AZURE_OPENAI_API_KEY) {
+    try {
+      const azureOpenai = new AzureOpenAI({
+        apiKey: AZURE_OPENAI_API_KEY,
+        endpoint: AZURE_OPENAI_ENDPOINT,
+        apiVersion: AZURE_OPENAI_API_VERSION,
+        ...(AZURE_OPENAI_DEPLOYMENT ? { defaultDeployment: AZURE_OPENAI_DEPLOYMENT } : {}),
+      });
+
+      const list = await azureOpenai.models.list();
+
+      const models: Array<string> = [];
+      for await (const model of list as AsyncIterable<{ id?: string }>) {
+        if (model && typeof model.id === "string") {
+          models.push(model.id);
+        }
+      }
+
+      return models.sort();
+    } catch {
+      return RECOMMENDED_MODELS;
+    }
+  }
+
   // If the user has not configured an API key we cannot hit the network.
   if (!OPENAI_API_KEY) {
     return RECOMMENDED_MODELS;

@@ -255,6 +255,35 @@ You can also define custom instructions:
 - Only use git commands if I explicitly mention you should
 ```
 
+### Environment Variables
+
+Codex supports the following environment variables:
+
+```bash
+# OpenAI API Configuration
+OPENAI_API_KEY=sk-... # Your OpenAI API key
+
+# Azure OpenAI Configuration
+AZURE_OPENAI_API_KEY=     # Your Azure OpenAI API key
+AZURE_OPENAI_ENDPOINT=    # Azure OpenAI endpoint URL (e.g., https://your-resource.openai.azure.com)
+AZURE_OPENAI_API_VERSION= # API version (defaults to "2024-02-01")
+AZURE_OPENAI_DEPLOYMENT=  # Optional deployment name for your model deployment
+```
+
+#### Using Azure OpenAI
+
+To use Azure OpenAI with Codex, set the following environment variables:
+
+```bash
+# Set Azure OpenAI credentials
+export AZURE_OPENAI_API_KEY="your-azure-api-key"
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+export AZURE_OPENAI_API_VERSION="your-api-version"
+export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"  # Optional
+```
+
+When these variables are set, Codex will automatically use Azure OpenAI instead of the standard OpenAI API. If both Azure OpenAI and standard OpenAI credentials are provided, Azure OpenAI will be used first.
+
 ---
 
 ## FAQ
@@ -277,6 +306,8 @@ Not directly, it requires [Linux on Windows (WSL2)](https://learn.microsoft.com/
 <summary>Which models are supported?</summary>
 
 Any model available with [Responses API](https://platform.openai.com/docs/api-reference/responses). The default is `o4-mini`, but pass `--model gpt-4o` or set `model: gpt-4o` in your config file to override.
+
+Codex also supports Azure OpenAI models. Configure your Azure OpenAI credentials using the environment variables listed in the [Configuration](#configuration) section.
 
 </details>
 
