@@ -71,9 +71,9 @@ codex "explain this codebase to me"
 codex --approval-mode full-auto "create the fanciest todo-list app"
 ```
 
-That’s it – Codex will scaffold a file, run it inside a sandbox, install any
+That's it – Codex will scaffold a file, run it inside a sandbox, install any
 missing dependencies, and show you the live result. Approve the changes and
-they’ll be committed to your working directory.
+they'll be committed to your working directory.
 
 ---
 
@@ -81,7 +81,7 @@ they’ll be committed to your working directory.
 
 Codex CLI is built for developers who already **live in the terminal** and want
 ChatGPT‑level reasoning **plus** the power to actually run code, manipulate
-files, and iterate – all under version control. In short, it’s _chat‑driven
+files, and iterate – all under version control. In short, it's _chat‑driven
 development_ that understands and executes your repo.
 
 - **Zero setup** — bring your OpenAI API key and it just works!
@@ -109,8 +109,8 @@ will also show a warning/confirmation if you start in **auto‑edit** or
 **full‑auto** while the directory is _not_ tracked by Git, so you always have a
 safety net.
 
-Coming soon: you’ll be able to whitelist specific commands to auto‑execute with
-the network enabled, once we’re confident in additional safeguards.
+Coming soon: you'll be able to whitelist specific commands to auto‑execute with
+the network enabled, once we're confident in additional safeguards.
 
 ### Platform sandboxing details
 
@@ -285,7 +285,15 @@ export AZURE_OPENAI_API_VERSION="your-api-version"
 export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"  # Optional
 ```
 
-When these variables are set, Codex will automatically use Azure OpenAI instead of the standard OpenAI API. If both Azure OpenAI and standard OpenAI credentials are provided, Azure OpenAI will be used first.
+Codex supports Azure OpenAI authentication through Entra ID (or Azure AD) for now. You can authenticate using either:
+1. `az login` command line tool
+2. `DefaultAzureCredential` which automatically tries multiple authentication methods including:
+   - Environment variables
+   - Managed identity
+   - Visual Studio Code
+   - Azure CLI
+   - Azure PowerShell
+   - Interactive browser login
 
 ---
 
@@ -327,7 +335,7 @@ Codex also supports Azure OpenAI models. Configure your Azure OpenAI credentials
 
 This project is under active development and the code will likely change pretty significantly. We'll update this message once that's complete!
 
-More broadly we welcome contributions – whether you are opening your very first pull request or you’re a seasoned maintainer. At the same time we care about reliability and long‑term maintainability, so the bar for merging code is intentionally **high**. The guidelines below spell out what “high‑quality” means in practice and should make the whole process transparent and friendly.
+More broadly we welcome contributions – whether you are opening your very first pull request or you're a seasoned maintainer. At the same time we care about reliability and long‑term maintainability, so the bar for merging code is intentionally **high**. The guidelines below spell out what "high‑quality" means in practice and should make the whole process transparent and friendly.
 
 ### Development workflow
 
@@ -350,13 +358,13 @@ More broadly we welcome contributions – whether you are opening your very firs
   The CLA‑Assistant bot will turn the PR status green once all authors have signed.
 
 ```bash
-# Watch mode (tests rerun on change)
+# Watch mode (tests rerun on change)
 npm run test:watch
 
-# Type‑check without emitting files
+# Type‑check without emitting files
 npm run typecheck
 
-# Automatically fix lint + prettier issues
+# Automatically fix lint + prettier issues
 npm run lint:fix
 npm run format:fix
 ```
@@ -398,7 +406,7 @@ Together we can make Codex CLI an incredible tool. **Happy hacking!** :rocket:
 All contributors **must** accept the CLA. The process is lightweight:
 
 1. Open your pull request.
-2. Paste the following comment (or reply `recheck` if you’ve signed before):
+2. Paste the following comment (or reply `recheck` if you've signed before):
 
    ```text
    I have read the CLA Document and I hereby sign the CLA
