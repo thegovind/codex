@@ -153,6 +153,7 @@ Both approaches are _transparent_ to everyday usage – you still run `codex` fr
 | `codex`        | Interactive REPL                    | `codex`                              |
 | `codex "…"`    | Initial prompt for interactive REPL | `codex "fix lint errors"`            |
 | `codex -q "…"` | Non‑interactive "quiet mode"        | `codex -q --json "explain utils.ts"` |
+| `codex completion <bash\|zsh\|fish>` | Print shell completion script    | `codex completion bash`               |
 
 Key flags: `--model/-m`, `--approval-mode/-a`, and `--quiet/-q`.
 
@@ -188,7 +189,7 @@ Set `CODEX_QUIET_MODE=1` to silence interactive UI noise.
 
 ## Recipes
 
-Below are a few bite‑size examples you can copy‑paste. Replace the text in quotes with your own task.
+Below are a few bite‑size examples you can copy‑paste. Replace the text in quotes with your own task. See the [prompting guide](https://github.com/openai/codex/blob/main/codex-cli/examples/prompting_guide.md) for more tips and usage patterns.
 
 | ✨  | What you type                                                                   | What happens                                                               |
 | --- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
@@ -227,8 +228,11 @@ cd codex/codex-cli
 npm install
 npm run build
 
-# Run the locally‑built CLI directly
+# Get the usage and the options
 node ./dist/cli.js --help
+
+# Run the locally‑built CLI directly
+node ./dist/cli.js
 
 # Or link the command globally for convenience
 npm link
