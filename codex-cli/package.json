@@ -45,7 +45,8 @@
     "openai": "^4.95.0",
     "react": "^18.2.0",
     "shell-quote": "^1.8.2",
-    "use-interval": "1.4.0"
+    "use-interval": "1.4.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
