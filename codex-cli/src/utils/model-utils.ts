@@ -2,9 +2,12 @@ import {
   OPENAI_API_KEY,
   AZURE_OPENAI_ENDPOINT,
   AZURE_OPENAI_API_VERSION,
-  AZURE_OPENAI_DEPLOYMENT
+  AZURE_OPENAI_DEPLOYMENT,
 } from "./config";
-import { DefaultAzureCredential, getBearerTokenProvider } from "@azure/identity";
+import {
+  DefaultAzureCredential,
+  getBearerTokenProvider,
+} from "@azure/identity";
 import OpenAI, { AzureOpenAI } from "openai";
 
 const MODEL_LIST_TIMEOUT_MS = 2_000; // 2 seconds
@@ -30,7 +33,7 @@ async function fetchModels(): Promise<Array<string>> {
 
       const azureClient = new AzureOpenAI({
         azureADTokenProvider,
-        apiVersion: AZURE_OPENAI_API_VERSION!
+        apiVersion: AZURE_OPENAI_API_VERSION!,
       });
 
       const models: Array<string> = [];
