@@ -229,7 +229,6 @@ if (cli.flags.config) {
 
 const apiKey = process.env["OPENAI_API_KEY"];
 const azureEndpoint = process.env["AZURE_OPENAI_ENDPOINT"];
-const azureApiVersion = process.env["AZURE_OPENAI_API_VERSION"];
 
 function showErrorAndExit(message: string): never {
   // eslint-disable-next-line no-console
@@ -251,22 +250,9 @@ if (!apiKey && !azureEndpoint) {
       `   ${chalk.bold(
         "AZURE_OPENAI_ENDPOINT",
       )}=https://your-resource.openai.azure.com\n` +
-      `   ${chalk.bold("AZURE_OPENAI_API_VERSION")}=your-api-version\n` +
       `   ${chalk.bold(
         "AZURE_OPENAI_DEPLOYMENT",
       )}=your-deployment-name (optional)\n\n` +
-      `See the README for more details on Azure OpenAI authentication.`,
-  );
-}
-
-if (azureEndpoint && !azureApiVersion) {
-  showErrorAndExit(
-    "Missing Azure OpenAI API version.\n\n" +
-      `Set the environment variable ${chalk.bold(
-        "AZURE_OPENAI_API_VERSION",
-      )} ` +
-      `and re-run this command.\n` +
-      `Example: ${chalk.bold("AZURE_OPENAI_API_VERSION=2024-02-01")}\n\n` +
       `See the README for more details on Azure OpenAI authentication.`,
   );
 }

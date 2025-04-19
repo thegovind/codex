@@ -62,7 +62,7 @@ Install globally:
 npm install -g @openai/codex
 ```
 
-Next, set your OpenAI API key as an environment variable:
+Next, set your OpenAI API key as an environment variable ([if trying with Azure OpenAI, see below](#using-azure-openai)):
 
 ```shell
 export OPENAI_API_KEY="your-api-key-here"
@@ -322,7 +322,7 @@ OPENAI_API_KEY=sk-... # Your OpenAI API key
 
 # Azure OpenAI Configuration (uses Azure AD credential, no API key required)
 AZURE_OPENAI_ENDPOINT=    # Azure OpenAI endpoint URL (e.g., https://your-resource.openai.azure.com)
-AZURE_OPENAI_API_VERSION= # API version (defaults to "2024-02-01")
+AZURE_OPENAI_API_VERSION= # API version (defaults to "2025-03-01-preview")
 AZURE_OPENAI_DEPLOYMENT=  # Optional deployment name for your model deployment
 ```
 
@@ -333,21 +333,11 @@ To use Azure OpenAI with Codex, set the following environment variables:
 ```bash
 # Set Azure OpenAI credentials
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
-export AZURE_OPENAI_API_VERSION="your-api-version"
-export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"  # Optional
+export AZURE_OPENAI_API_VERSION="api-version" # Optional, defaults to "2025-03-01-preview"
+export AZURE_OPENAI_DEPLOYMENT="deployment-name"  # Optional, defaults to "04-mini"
 ```
 
-Codex supports Azure OpenAI authentication through Entra ID (or Azure AD) for now. You can authenticate using either:
-1. `az login` command line tool
-2. `DefaultAzureCredential` which automatically tries multiple authentication methods including:
-   - Environment variables
-   - Managed identity
-   - Visual Studio Code
-   - Azure CLI
-   - Azure PowerShell
-   - Interactive browser login
-
----
+## Codex supports Azure OpenAI authentication through Entra ID (or Azure AD) for now. You can authenticate using `az login` command line tool ([install guide](https://learn.microsoft.com/cli/azure/install-azure-cli))
 
 ## FAQ
 
@@ -389,7 +379,7 @@ Not directly. It requires [Windows Subsystem for Linux (WSL2)](https://learn.mic
 ## Zero Data Retention (ZDR) Organization Limitation
 
 > **Note:** Codex CLI does **not** currently support OpenAI organizations with [Zero Data Retention (ZDR)](https://platform.openai.com/docs/guides/your-data#zero-data-retention) enabled.
-Codex also supports Azure OpenAI models. Configure your Azure OpenAI credentials using the environment variables listed in the [Configuration](#configuration) section.
+> Codex also supports Azure OpenAI models. Configure your Azure OpenAI credentials using the environment variables listed in the [Configuration](#configuration) section.
 
 </details>
 

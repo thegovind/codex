@@ -74,7 +74,8 @@ async function fetchModels(): Promise<Array<string>> {
 
     return models.sort();
   } catch {
-    return [];
+    // Return recommended models on error to match Azure behavior
+    return RECOMMENDED_MODELS;
   }
 }
 
