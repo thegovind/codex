@@ -45,7 +45,7 @@ async function fetchModels(): Promise<Array<string>> {
 
       const list = await azureClient.models.list();
       for await (const model of list as AsyncIterable<{ id?: string }>) {
-        if (model && typeof model.id === "string") {
+        if (model && typeof model.id === "string" && (model.id.startsWith('gpt') || model.id.startsWith('o'))) {
           models.push(model.id);
         }
       }

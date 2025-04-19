@@ -1,11 +1,20 @@
 /* eslint-disable no-await-in-loop */
 
+// Type imports
 import type { AppConfig } from "../utils/config";
 import type { FileOperation } from "../utils/singlepass/file_ops";
 
-import Spinner from "./vendor/ink-spinner"; // Third‑party / vendor components
+// External imports (Built-ins first, then packages alphabetically)
+import { log } from "../utils/agent/log";
+import {
+  OPENAI_TIMEOUT_MS,
+  OPENAI_BASE_URL,
+  AZURE_OPENAI_ENDPOINT,
+  AZURE_OPENAI_API_VERSION,
+  AZURE_OPENAI_DEPLOYMENT,
+} from "../utils/config";
+import Spinner from "./vendor/ink-spinner";
 import TextInput from "./vendor/ink-text-input";
-import { OPENAI_TIMEOUT_MS, OPENAI_BASE_URL } from "../utils/config";
 import {
   generateDiffSummary,
   generateEditSummary,
@@ -17,13 +26,15 @@ import {
   makeAsciiDirectoryStructure,
 } from "../utils/singlepass/context_files";
 import { EditedFilesSchema } from "../utils/singlepass/file_ops";
+import { DefaultAzureCredential, getBearerTokenProvider } from "@azure/identity";
 import * as fsSync from "fs";
 import * as fsPromises from "fs/promises";
 import { Box, Text, useApp, useInput } from "ink";
-import OpenAI from "openai";
+import OpenAI, { AzureOpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import path from "path";
 import React, { useEffect, useState, useRef } from "react";
+
 
 /** Maximum number of characters allowed in the context passed to the model. */
 const MAX_CONTEXT_CHARACTER_LIMIT = 2_000_000;
@@ -393,12 +404,38 @@ export function SinglePassApp({
         files,
       });
 
-      const openai = new OpenAI({
-        apiKey: config.apiKey ?? "",
-        baseURL: OPENAI_BASE_URL || undefined,
-        timeout: OPENAI_TIMEOUT_MS,
-      });
-      const chatResp = await openai.beta.chat.completions.parse({
+      let oaiClient;
+      const azureEndpoint = AZURE_OPENAI_ENDPOINT;
+
+      if (azureEndpoint) {
+        log("Using Azure OpenAI authentication path");
+        try {
+          // Use Azure AD token provider for Azure OpenAI
+          const credential = new DefaultAzureCredential();
+          const scope = "https://cognitiveservices.azure.com/.default";
+          const azureADTokenProvider = getBearerTokenProvider(credential, scope);
+
+          oaiClient = new AzureOpenAI({
+            azureADTokenProvider,
+            apiVersion: AZURE_OPENAI_API_VERSION!,
+            deployment: AZURE_OPENAI_DEPLOYMENT!,
+            ...(OPENAI_TIMEOUT_MS !== undefined ? { timeout: OPENAI_TIMEOUT_MS } : {}),
+          });
+          log("Successfully created Azure OpenAI client in SinglePass");
+        } catch (error) {
+          log(`Error creating Azure OpenAI client: ${error}`);
+          throw error;
+        }
+      } else {
+        log("Using standard OpenAI authentication path");
+        oaiClient = new OpenAI({
+          apiKey: config.apiKey ?? "",
+          baseURL: OPENAI_BASE_URL || undefined,
+          timeout: OPENAI_TIMEOUT_MS,
+        });
+      }
+
+      const chatResp = await oaiClient.beta.chat.completions.parse({
         model: config.model,
         ...(config.flexMode ? { service_tier: "flex" } : {}),
         messages: [
