@@ -62,7 +62,7 @@ Install globally:
 npm install -g @openai/codex
 ```
 
-Next, set your OpenAI API key as an environment variable ([if trying with Azure OpenAI, see below](#using-azure-openai)):
+Next, set your OpenAI API key as an environment variable ([if trying with Azure OpenAI, see below](#environment-variables)):
 
 ```shell
 export OPENAI_API_KEY="your-api-key-here"
@@ -326,18 +326,7 @@ AZURE_OPENAI_API_VERSION= # API version (defaults to "2025-03-01-preview")
 AZURE_OPENAI_DEPLOYMENT=  # Optional deployment name for your model deployment
 ```
 
-#### Using Azure OpenAI
-
-To use Azure OpenAI with Codex, set the following environment variables:
-
-```bash
-# Set Azure OpenAI credentials
-export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
-export AZURE_OPENAI_API_VERSION="api-version" # Optional, defaults to "2025-03-01-preview"
-export AZURE_OPENAI_DEPLOYMENT="deployment-name"  # Optional, defaults to "04-mini"
-```
-
-## Codex supports Azure OpenAI authentication through Entra ID (or Azure AD) for now. You can authenticate using `az login` command line tool ([install guide](https://learn.microsoft.com/cli/azure/install-azure-cli))
+> **Note:** Codex supports Azure OpenAI authentication through Entra ID (or Azure AD) for now. You can authenticate using `az login` command line tool ([install guide](https://learn.microsoft.com/cli/azure/install-azure-cli))
 
 ## FAQ
 
