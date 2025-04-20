@@ -320,13 +320,18 @@ Codex supports the following environment variables:
 # OpenAI API Configuration
 OPENAI_API_KEY=sk-... # Your OpenAI API key
 
-# Azure OpenAI Configuration (uses Azure AD credential, no API key required)
+# Azure OpenAI Configuration
+# Option 1: Entra ID (Azure AD) Authentication (recommended)
 AZURE_OPENAI_ENDPOINT=    # Azure OpenAI endpoint URL (e.g., https://your-resource.openai.azure.com)
 AZURE_OPENAI_API_VERSION= # API version (defaults to "2025-03-01-preview")
 AZURE_OPENAI_DEPLOYMENT=  # Optional deployment name for your model deployment
-```
+# (Then authenticate using `az login` command line tool)
 
-> **Note:** Codex supports Azure OpenAI authentication through Entra ID (or Azure AD) for now. You can authenticate using `az login` command line tool ([install guide](https://learn.microsoft.com/cli/azure/install-azure-cli))
+# Option 2: API Key Authentication (fallback)
+# Use above Azure OpenAI environment variables plus:
+AZURE_OPENAI_API_KEY=     # Your Azure OpenAI API key
+
+> **Note:** For Entra ID auth with `az login`, you'll need Azure CLI ([install guide](https://learn.microsoft.com/cli/azure/install-azure-cli))
 
 ## FAQ
 
@@ -368,15 +373,17 @@ Not directly. It requires [Windows Subsystem for Linux (WSL2)](https://learn.mic
 ## Zero Data Retention (ZDR) Organization Limitation
 
 > **Note:** Codex CLI does **not** currently support OpenAI organizations with [Zero Data Retention (ZDR)](https://platform.openai.com/docs/guides/your-data#zero-data-retention) enabled.
-> Codex also supports Azure OpenAI models. Configure your Azure OpenAI credentials using the environment variables listed in the [Configuration](#configuration) section.
+> If you are affected by this limitation, you can use Azure OpenAI models instead. Configure your Azure OpenAI credentials using the environment variables listed in the [Configuration](#configuration) section.
 
 </details>
 
 If your OpenAI organization has Zero Data Retention enabled, you may encounter errors such as:
 
 ```
+
 OpenAI rejected the request. Error details: Status: 400, Code: unsupported_parameter, Type: invalid_request_error, Message: 400 Previous response cannot be used for this organization due to Zero Data Retention.
-```
+
+````
 
 **Why?**
 
@@ -427,7 +434,7 @@ These hooks help maintain code quality and prevent pushing code with failing tes
 
 ```bash
 npm test && npm run lint && npm run typecheck
-```
+````
 
 - If you have **not** yet signed the Contributor License Agreement (CLA), add a PR comment containing the exact text
 

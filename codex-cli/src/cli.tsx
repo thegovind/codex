@@ -244,15 +244,15 @@ if (!apiKey && !azureEndpoint) {
       `You can create a key here: ${chalk.bold(
         chalk.underline("https://platform.openai.com/account/api-keys"),
       )}\n\n` +
-      `Alternatively, if you want to use Azure OpenAI, you can authenticate using Entra ID (Azure AD):\n` +
-      `1. Install the Azure CLI and run ${chalk.bold("az login")}\n` +
-      `2. Set the following environment variables:\n` +
-      `   ${chalk.bold(
-        "AZURE_OPENAI_ENDPOINT",
-      )}=https://your-resource.openai.azure.com\n` +
-      `   ${chalk.bold(
-        "AZURE_OPENAI_DEPLOYMENT",
-      )}=your-deployment-name (optional)\n\n` +
+      `Alternatively, you can use Azure OpenAI with either of these authentication methods:\n\n` +
+      `1. Entra ID (Azure AD) authentication (recommended): \n` +
+      `   Install the Azure CLI and run ${chalk.bold("az login")}\n` +
+      `   ${chalk.bold("AZURE_OPENAI_ENDPOINT")}=https://your-resource.openai.azure.com\n` +
+      `   ${chalk.bold("AZURE_OPENAI_DEPLOYMENT")}=your-deployment-name (optional)\n\n` +
+      `2. API Key authentication (fallback): \n` +
+      `   ${chalk.bold("AZURE_OPENAI_ENDPOINT")}=https://your-resource.openai.azure.com\n` +
+      `   ${chalk.bold("AZURE_OPENAI_API_KEY")}=your-api-key\n` +
+      `   ${chalk.bold("AZURE_OPENAI_DEPLOYMENT")}=your-deployment-name (optional)\n\n` +
       `See the README for more details on Azure OpenAI authentication.`,
   );
 }

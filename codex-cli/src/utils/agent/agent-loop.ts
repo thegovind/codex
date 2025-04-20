@@ -14,6 +14,7 @@ import {
   AZURE_OPENAI_ENDPOINT,
   AZURE_OPENAI_API_VERSION,
   AZURE_OPENAI_DEPLOYMENT,
+  AZURE_OPENAI_API_KEY,
 } from "../config.js";
 import { parseToolCallArguments } from "../parsers.js";
 import {
@@ -255,17 +256,37 @@ export class AgentLoop {
     if (azureEndpoint) {
       log("Using Azure OpenAI authentication path");
       try {
-        // Use Azure AD token provider for Azure OpenAI
-        const credential = new DefaultAzureCredential();
-        const scope = "https://cognitiveservices.azure.com/.default";
-        const azureADTokenProvider = getBearerTokenProvider(credential, scope);
+        // Try Entra ID (Azure AD) authentication first
+        try {
+          log("Attempting Azure OpenAI Entra ID authentication");
+          const credential = new DefaultAzureCredential();
+          const scope = "https://cognitiveservices.azure.com/.default";
+          const azureADTokenProvider = getBearerTokenProvider(credential, scope);
 
-        this.oai = new AzureOpenAI({
-          azureADTokenProvider,
-          apiVersion: AZURE_OPENAI_API_VERSION!,
-          deployment: AZURE_OPENAI_DEPLOYMENT!,
-          ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
-        });
+          this.oai = new AzureOpenAI({
+            azureADTokenProvider,
+            apiVersion: AZURE_OPENAI_API_VERSION!,
+            deployment: AZURE_OPENAI_DEPLOYMENT!,
+            ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
+          });
+          log("Successfully created Azure OpenAI client with Entra ID authentication");
+        } catch (entraidError) {
+          // Fall back to API key if Entra ID fails
+          if (AZURE_OPENAI_API_KEY) {
+            log("Entra ID authentication failed, falling back to API key authentication");
+            this.oai = new AzureOpenAI({
+              apiKey: AZURE_OPENAI_API_KEY,
+              apiVersion: AZURE_OPENAI_API_VERSION!,
+              deployment: AZURE_OPENAI_DEPLOYMENT!,
+              ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
+            });
+            log("Successfully created Azure OpenAI client with API key authentication");
+          } else {
+            // If we have no API key to fall back to, rethrow the original error
+            log("No API key available as fallback");
+            throw entraidError;
+          }
+        }
         log("Successfully created Azure OpenAI client in Agent Loop");
       } catch (error) {
         log(`Error creating Azure OpenAI client: ${error}`);

@@ -41,6 +41,7 @@ export const AZURE_OPENAI_API_VERSION =
   process.env["AZURE_OPENAI_API_VERSION"] || "2025-03-01-preview";
 export const AZURE_OPENAI_DEPLOYMENT =
   process.env["AZURE_OPENAI_DEPLOYMENT"] || "o4-mini";
+export const AZURE_OPENAI_API_KEY = process.env["AZURE_OPENAI_API_KEY"] || "";
 
 export function setApiKey(apiKey: string): void {
   OPENAI_API_KEY = apiKey;

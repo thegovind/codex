@@ -3,6 +3,7 @@ import {
   AZURE_OPENAI_ENDPOINT,
   AZURE_OPENAI_API_VERSION,
   AZURE_OPENAI_DEPLOYMENT,
+  AZURE_OPENAI_API_KEY,
 } from "./config";
 import {
   DefaultAzureCredential,
@@ -26,15 +27,31 @@ let modelsPromise: Promise<Array<string>> | null = null;
 async function fetchModels(): Promise<Array<string>> {
   if (AZURE_OPENAI_ENDPOINT) {
     try {
-      // Use Azure AD token provider for Azure OpenAI
-      const credential = new DefaultAzureCredential();
-      const scope = "https://cognitiveservices.azure.com/.default";
-      const azureADTokenProvider = getBearerTokenProvider(credential, scope);
+      let azureClient;
+      
+      // Try Entra ID (Azure AD) authentication first
+      try {
+        // Use Azure AD token provider for Azure OpenAI
+        const credential = new DefaultAzureCredential();
+        const scope = "https://cognitiveservices.azure.com/.default";
+        const azureADTokenProvider = getBearerTokenProvider(credential, scope);
 
-      const azureClient = new AzureOpenAI({
-        azureADTokenProvider,
-        apiVersion: AZURE_OPENAI_API_VERSION!,
-      });
+        azureClient = new AzureOpenAI({
+          azureADTokenProvider,
+          apiVersion: AZURE_OPENAI_API_VERSION!,
+        });
+      } catch (entraidError) {
+        // Fall back to API key if Entra ID fails
+        if (AZURE_OPENAI_API_KEY) {
+          azureClient = new AzureOpenAI({
+            apiKey: AZURE_OPENAI_API_KEY,
+            apiVersion: AZURE_OPENAI_API_VERSION!,
+          });
+        } else {
+          // If we have no API key to fall back to, rethrow the original error
+          throw entraidError;
+        }
+      }
 
       const models: Array<string> = [];
 
