@@ -1,15 +1,9 @@
 import {
   OPENAI_API_KEY,
   AZURE_OPENAI_ENDPOINT,
-  AZURE_OPENAI_API_VERSION,
   AZURE_OPENAI_DEPLOYMENT,
-  AZURE_OPENAI_API_KEY,
 } from "./config";
-import {
-  DefaultAzureCredential,
-  getBearerTokenProvider,
-} from "@azure/identity";
-import OpenAI, { AzureOpenAI } from "openai";
+import OpenAI from "openai";
 
 const MODEL_LIST_TIMEOUT_MS = 2_000; // 2 seconds
 export const RECOMMENDED_MODELS: Array<string> = ["o4-mini", "o3"];
@@ -27,47 +21,15 @@ let modelsPromise: Promise<Array<string>> | null = null;
 async function fetchModels(): Promise<Array<string>> {
   if (AZURE_OPENAI_ENDPOINT) {
     try {
-      let azureClient;
+      // For Azure OpenAI, we only return the configured deployment (if any) plus recommended models
+      // This is because the models.list() API doesn't reflect actual available deployments
+      const models = new Set<string>(RECOMMENDED_MODELS);
       
-      // Try Entra ID (Azure AD) authentication first
-      try {
-        // Use Azure AD token provider for Azure OpenAI
-        const credential = new DefaultAzureCredential();
-        const scope = "https://cognitiveservices.azure.com/.default";
-        const azureADTokenProvider = getBearerTokenProvider(credential, scope);
-
-        azureClient = new AzureOpenAI({
-          azureADTokenProvider,
-          apiVersion: AZURE_OPENAI_API_VERSION!,
-        });
-      } catch (entraidError) {
-        // Fall back to API key if Entra ID fails
-        if (AZURE_OPENAI_API_KEY) {
-          azureClient = new AzureOpenAI({
-            apiKey: AZURE_OPENAI_API_KEY,
-            apiVersion: AZURE_OPENAI_API_VERSION!,
-          });
-        } else {
-          // If we have no API key to fall back to, rethrow the original error
-          throw entraidError;
-        }
-      }
-
-      const models: Array<string> = [];
-
-      // If a deployment is specified, add it to the list
       if (AZURE_OPENAI_DEPLOYMENT) {
-        models.push(AZURE_OPENAI_DEPLOYMENT);
+        models.add(AZURE_OPENAI_DEPLOYMENT);
       }
 
-      const list = await azureClient.models.list();
-      for await (const model of list as AsyncIterable<{ id?: string }>) {
-        if (model && typeof model.id === "string" && (model.id.startsWith('gpt') || model.id.startsWith('o'))) {
-          models.push(model.id);
-        }
-      }
-
-      return models.sort();
+      return Array.from(models).sort();
     } catch {
       return RECOMMENDED_MODELS;
     }
