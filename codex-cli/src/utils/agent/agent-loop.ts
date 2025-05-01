@@ -17,6 +17,7 @@ import {
   OPENAI_PROJECT,
   getApiKey,
   getBaseUrl,
+  AZURE_OPENAI_API_VERSION,
 } from "../config.js";
 import { log } from "../logger/log.js";
 import { parseToolCallArguments } from "../parsers.js";
@@ -30,7 +31,8 @@ import {
 } from "../session.js";
 import { handleExecCommand } from "./handle-exec-command.js";
 import { randomUUID } from "node:crypto";
-import OpenAI, { APIConnectionTimeoutError } from "openai";
+import OpenAI, { APIConnectionTimeoutError , AzureOpenAI } from "openai";
+
 
 // Wait time before retrying after rate limit errors (ms).
 const RATE_LIMIT_RETRY_WAIT_MS = parseInt(
@@ -316,6 +318,24 @@ export class AgentLoop {
       },
       ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
     });
+
+    if (this.provider.toLowerCase() === "azure") {
+      this.oai = new AzureOpenAI({
+        apiKey,
+        baseURL,
+        apiVersion: AZURE_OPENAI_API_VERSION,
+        defaultHeaders: {
+          originator: ORIGIN,
+          version: CLI_VERSION,
+          session_id: this.sessionId,
+          ...(OPENAI_ORGANIZATION
+            ? { "OpenAI-Organization": OPENAI_ORGANIZATION }
+            : {}),
+          ...(OPENAI_PROJECT ? { "OpenAI-Project": OPENAI_PROJECT } : {}),
+        },
+        ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
+      });
+    }
 
     setSessionId(this.sessionId);
     setCurrentModel(this.model);

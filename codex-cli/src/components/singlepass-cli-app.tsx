@@ -11,6 +11,7 @@ import {
   OPENAI_PROJECT,
   getBaseUrl,
   getApiKey,
+  AZURE_OPENAI_API_VERSION,
 } from "../utils/config";
 import {
   generateDiffSummary,
@@ -26,10 +27,11 @@ import { EditedFilesSchema } from "../utils/singlepass/file_ops";
 import * as fsSync from "fs";
 import * as fsPromises from "fs/promises";
 import { Box, Text, useApp, useInput } from "ink";
-import OpenAI from "openai";
+import OpenAI, { AzureOpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import path from "path";
 import React, { useEffect, useState, useRef } from "react";
+
 
 /** Maximum number of characters allowed in the context passed to the model. */
 const MAX_CONTEXT_CHARACTER_LIMIT = 2_000_000;
@@ -407,12 +409,23 @@ export function SinglePassApp({
         headers["OpenAI-Project"] = OPENAI_PROJECT;
       }
 
-      const openai = new OpenAI({
-        apiKey: getApiKey(config.provider),
-        baseURL: getBaseUrl(config.provider),
-        timeout: OPENAI_TIMEOUT_MS,
-        defaultHeaders: headers,
-      });
+      let openai;
+      if (config.provider?.toLowerCase() === "azure") {
+        openai = new AzureOpenAI({
+          apiKey: getApiKey(config.provider),
+          baseURL: getBaseUrl(config.provider),
+          apiVersion: AZURE_OPENAI_API_VERSION,
+          timeout: OPENAI_TIMEOUT_MS,
+          defaultHeaders: headers,
+        });
+      } else {
+        openai = new OpenAI({
+          apiKey: getApiKey(config.provider),
+          baseURL: getBaseUrl(config.provider),
+          timeout: OPENAI_TIMEOUT_MS,
+          defaultHeaders: headers,
+        });
+      }
       const chatResp = await openai.beta.chat.completions.parse({
         model: config.model,
         ...(config.flexMode ? { service_tier: "flex" } : {}),

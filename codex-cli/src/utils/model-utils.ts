@@ -6,9 +6,11 @@ import {
   OPENAI_PROJECT,
   getBaseUrl,
   getApiKey,
+  AZURE_OPENAI_API_VERSION,
 } from "./config";
 import { type SupportedModelId, openAiModelInfo } from "./model-info.js";
-import OpenAI from "openai";
+import OpenAI, { AzureOpenAI } from "openai";
+
 
 const MODEL_LIST_TIMEOUT_MS = 2_000; // 2 seconds
 export const RECOMMENDED_MODELS: Array<string> = ["o4-mini", "o3"];
@@ -35,11 +37,21 @@ async function fetchModels(provider: string): Promise<Array<string>> {
       headers["OpenAI-Project"] = OPENAI_PROJECT;
     }
 
-    const openai = new OpenAI({
-      apiKey: getApiKey(provider),
-      baseURL: getBaseUrl(provider),
-      defaultHeaders: headers,
-    });
+    let openai;
+    if (provider.toLowerCase() === "azure") {
+      openai = new AzureOpenAI({
+        apiKey: getApiKey(provider),
+        baseURL: getBaseUrl(provider),
+        apiVersion: AZURE_OPENAI_API_VERSION,
+        defaultHeaders: headers,
+      });
+    } else {
+      openai = new OpenAI({
+        apiKey: getApiKey(provider),
+        baseURL: getBaseUrl(provider),
+        defaultHeaders: headers,
+      });
+    }
     const list = await openai.models.list();
     const models: Array<string> = [];
     for await (const model of list as AsyncIterable<{ id?: string }>) {

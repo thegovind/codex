@@ -1,8 +1,9 @@
 import type { AppConfig } from "./config.js";
 import type { ResponseItem } from "openai/resources/responses/responses.mjs";
 
-import { getBaseUrl, getApiKey } from "./config.js";
-import OpenAI from "openai";
+import { getBaseUrl, getApiKey, AZURE_OPENAI_API_VERSION } from "./config.js";
+import OpenAI, { AzureOpenAI } from "openai";
+
 /**
  * Generate a condensed summary of the conversation items.
  * @param items The list of conversation items to summarize
@@ -23,10 +24,19 @@ export async function generateCompactSummary(
   flexMode = false,
   config: AppConfig,
 ): Promise<string> {
-  const oai = new OpenAI({
-    apiKey: getApiKey(config.provider),
-    baseURL: getBaseUrl(config.provider),
-  });
+  let oai;
+  if (config.provider?.toLowerCase() === "azure") {
+    oai = new AzureOpenAI({
+      apiKey: getApiKey(config.provider),
+      baseURL: getBaseUrl(config.provider),
+      apiVersion: AZURE_OPENAI_API_VERSION,
+    });
+  } else {
+    oai = new OpenAI({
+      apiKey: getApiKey(config.provider),
+      baseURL: getBaseUrl(config.provider),
+    });
+  }
 
   const conversationText = items
     .filter(
