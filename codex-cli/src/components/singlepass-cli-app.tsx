@@ -31,6 +31,7 @@ import OpenAI, { AzureOpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import path from "path";
 import React, { useEffect, useState, useRef } from "react";
+import { AzureOpenAI } from "openai";
 
 
 /** Maximum number of characters allowed in the context passed to the model. */
