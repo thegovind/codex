@@ -13,7 +13,7 @@ import { useTerminalSize } from "../../hooks/use-terminal-size.js";
 import { AgentLoop } from "../../utils/agent/agent-loop.js";
 import { ReviewDecision } from "../../utils/agent/review.js";
 import { generateCompactSummary } from "../../utils/compact-summary.js";
-import { getBaseUrl, getApiKey, saveConfig } from "../../utils/config.js";
+import { getBaseUrl, getApiKey, saveConfig, AZURE_OPENAI_API_VERSION } from "../../utils/config.js";
 import { extractAppliedPatches as _extractAppliedPatches } from "../../utils/extract-applied-patches.js";
 import { getGitDiff } from "../../utils/get-diff.js";
 import { createInputItem } from "../../utils/input-utils.js";
@@ -35,6 +35,7 @@ import chalk from "chalk";
 import { Box, Text } from "ink";
 import { spawn } from "node:child_process";
 import OpenAI from "openai";
+import { AzureOpenAI } from "openai";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { inspect } from "util";
 
@@ -78,10 +79,19 @@ async function generateCommandExplanation(
 ): Promise<string> {
   try {
     // Create a temporary OpenAI client
-    const oai = new OpenAI({
-      apiKey: getApiKey(config.provider),
-      baseURL: getBaseUrl(config.provider),
-    });
+    let oai;
+    if (config.provider?.toLowerCase() === "azure") {
+      oai = new AzureOpenAI({
+        apiKey: getApiKey(config.provider),
+        baseURL: getBaseUrl(config.provider),
+        apiVersion: AZURE_OPENAI_API_VERSION,
+      });
+    } else {
+      oai = new OpenAI({
+        apiKey: getApiKey(config.provider),
+        baseURL: getBaseUrl(config.provider),
+      });
+    }
 
     // Format the command for display
     const commandForDisplay = formatCommandForDisplay(command);
