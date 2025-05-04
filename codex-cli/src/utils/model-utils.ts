@@ -1,16 +1,9 @@
 import type { ResponseItem } from "openai/resources/responses/responses.mjs";
 
 import { approximateTokensUsed } from "./approximate-tokens-used.js";
-import {
-  OPENAI_ORGANIZATION,
-  OPENAI_PROJECT,
-  getBaseUrl,
-  getApiKey,
-  AZURE_OPENAI_API_VERSION,
-} from "./config";
+import { getApiKey } from "./config.js";
 import { type SupportedModelId, openAiModelInfo } from "./model-info.js";
-import OpenAI, { AzureOpenAI } from "openai";
-
+import { createOpenAIClient } from "./openai-client.js";
 
 const MODEL_LIST_TIMEOUT_MS = 2_000; // 2 seconds
 export const RECOMMENDED_MODELS: Array<string> = ["o4-mini", "o3"];
@@ -29,29 +22,7 @@ async function fetchModels(provider: string): Promise<Array<string>> {
   }
 
   try {
-    const headers: Record<string, string> = {};
-    if (OPENAI_ORGANIZATION) {
-      headers["OpenAI-Organization"] = OPENAI_ORGANIZATION;
-    }
-    if (OPENAI_PROJECT) {
-      headers["OpenAI-Project"] = OPENAI_PROJECT;
-    }
-
-    let openai;
-    if (provider.toLowerCase() === "azure") {
-      openai = new AzureOpenAI({
-        apiKey: getApiKey(provider),
-        baseURL: getBaseUrl(provider),
-        apiVersion: AZURE_OPENAI_API_VERSION,
-        defaultHeaders: headers,
-      });
-    } else {
-      openai = new OpenAI({
-        apiKey: getApiKey(provider),
-        baseURL: getBaseUrl(provider),
-        defaultHeaders: headers,
-      });
-    }
+    const openai = createOpenAIClient({ provider });
     const list = await openai.models.list();
     const models: Array<string> = [];
     for await (const model of list as AsyncIterable<{ id?: string }>) {
