@@ -1,4 +1,3 @@
-use crate::approval_mode_cli_arg::parse_sandbox_permission_with_base_path;
 use crate::flags::OPENAI_DEFAULT_MODEL;
 use crate::protocol::AskForApproval;
 use crate::protocol::SandboxPermission;
@@ -52,6 +51,11 @@ pub struct Config {
     ///
     /// If unset the feature is disabled.
     pub notify: Option<Vec<String>>,
+
+    /// The directory that should be treated as the current working directory
+    /// for the session. All relative paths inside the business-logic layer are
+    /// resolved against this path.
+    pub cwd: PathBuf,
 }
 
 /// Base config deserialized from ~/.codex/config.toml.
@@ -135,6 +139,7 @@ where
 #[derive(Default, Debug, Clone)]
 pub struct ConfigOverrides {
     pub model: Option<String>,
+    pub cwd: Option<PathBuf>,
     pub approval_policy: Option<AskForApproval>,
     pub sandbox_policy: Option<SandboxPolicy>,
     pub disable_response_storage: Option<bool>,
@@ -158,6 +163,7 @@ impl Config {
         // Destructure ConfigOverrides fully to ensure all overrides are applied.
         let ConfigOverrides {
             model,
+            cwd,
             approval_policy,
             sandbox_policy,
             disable_response_storage,
@@ -180,6 +186,23 @@ impl Config {
 
         Self {
             model: model.or(cfg.model).unwrap_or_else(default_model),
+            cwd: cwd.map_or_else(
+                || {
+                    tracing::info!("cwd not set, using current dir");
+                    std::env::current_dir().expect("cannot determine current dir")
+                },
+                |p| {
+                    if p.is_absolute() {
+                        p
+                    } else {
+                        // Resolve relative paths against the current working directory.
+                        tracing::info!("cwd is relative, resolving against current dir");
+                        let mut cwd = std::env::current_dir().expect("cannot determine cwd");
+                        cwd.push(p);
+                        cwd
+                    }
+                },
+            ),
             approval_policy: approval_policy
                 .or(cfg.approval_policy)
                 .unwrap_or_else(AskForApproval::default),
@@ -231,6 +254,52 @@ pub fn log_dir() -> std::io::Result<PathBuf> {
     let mut p = codex_dir()?;
     p.push("log");
     Ok(p)
+}
+
+pub(crate) fn parse_sandbox_permission_with_base_path(
+    raw: &str,
+    base_path: PathBuf,
+) -> std::io::Result<SandboxPermission> {
+    use SandboxPermission::*;
+
+    if let Some(path) = raw.strip_prefix("disk-write-folder=") {
+        return if path.is_empty() {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "--sandbox-permission disk-write-folder=<PATH> requires a non-empty PATH",
+            ))
+        } else {
+            use path_absolutize::*;
+
+            let file = PathBuf::from(path);
+            let absolute_path = if file.is_relative() {
+                file.absolutize_from(base_path)
+            } else {
+                file.absolutize()
+            }
+            .map(|path| path.into_owned())?;
+            Ok(DiskWriteFolder {
+                folder: absolute_path,
+            })
+        };
+    }
+
+    match raw {
+        "disk-full-read-access" => Ok(DiskFullReadAccess),
+        "disk-write-platform-user-temp-folder" => Ok(DiskWritePlatformUserTempFolder),
+        "disk-write-platform-global-temp-folder" => Ok(DiskWritePlatformGlobalTempFolder),
+        "disk-write-cwd" => Ok(DiskWriteCwd),
+        "disk-full-write-access" => Ok(DiskFullWriteAccess),
+        "network-full-access" => Ok(NetworkFullAccess),
+        _ => Err(
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "`{raw}` is not a recognised permission.\nRun with `--help` to see the accepted values."
+                ),
+            )
+        ),
+    }
 }
 
 #[cfg(test)]
