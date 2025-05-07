@@ -12,14 +12,16 @@
 //! issue requests and receive strongly-typed results.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::atomic::AtomicI64;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
+use std::time::Duration;
 
-use anyhow::anyhow;
 use anyhow::Result;
+use anyhow::anyhow;
 use mcp_types::CallToolRequest;
 use mcp_types::CallToolRequestParams;
+use mcp_types::JSONRPC_VERSION;
 use mcp_types::JSONRPCMessage;
 use mcp_types::JSONRPCNotification;
 use mcp_types::JSONRPCRequest;
@@ -29,16 +31,16 @@ use mcp_types::ListToolsRequestParams;
 use mcp_types::ListToolsResult;
 use mcp_types::ModelContextProtocolRequest;
 use mcp_types::RequestId;
-use mcp_types::JSONRPC_VERSION;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use tokio::io::AsyncBufReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::io::BufReader;
 use tokio::process::Command;
+use tokio::sync::Mutex;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
-use tokio::sync::Mutex;
+use tokio::time;
 use tracing::debug;
 use tracing::error;
 use tracing::info;
@@ -175,7 +177,15 @@ impl McpClient {
     }
 
     /// Send an arbitrary MCP request and await the typed result.
-    pub async fn send_request<R>(&self, params: R::Params) -> Result<R::Result>
+    ///
+    /// If `timeout` is `None` the call waits indefinitely. If `Some(duration)`
+    /// is supplied and no response is received within the given period, a
+    /// timeout error is returned.
+    pub async fn send_request<R>(
+        &self,
+        params: R::Params,
+        timeout: Option<Duration>,
+    ) -> Result<R::Result>
     where
         R: ModelContextProtocolRequest,
         R::Params: Serialize,
@@ -220,10 +230,31 @@ impl McpClient {
             ));
         }
 
-        // Await the response.
-        let msg = rx
-            .await
-            .map_err(|_| anyhow!("response channel closed before a reply was received"))?;
+        // Await the response, optionally bounded by a timeout.
+        let msg = match timeout {
+            Some(duration) => {
+                match time::timeout(duration, rx).await {
+                    Ok(Ok(msg)) => msg,
+                    Ok(Err(_)) => {
+                        // Channel closed without a reply – remove the pending entry.
+                        let mut guard = self.pending.lock().await;
+                        guard.remove(&id);
+                        return Err(anyhow!(
+                            "response channel closed before a reply was received"
+                        ));
+                    }
+                    Err(_) => {
+                        // Timed out. Remove the pending entry so we don't leak.
+                        let mut guard = self.pending.lock().await;
+                        guard.remove(&id);
+                        return Err(anyhow!("request timed out"));
+                    }
+                }
+            }
+            None => rx
+                .await
+                .map_err(|_| anyhow!("response channel closed before a reply was received"))?,
+        };
 
         match msg {
             JSONRPCMessage::Response(JSONRPCResponse { result, .. }) => {
@@ -245,8 +276,9 @@ impl McpClient {
     pub async fn list_tools(
         &self,
         params: Option<ListToolsRequestParams>,
+        timeout: Option<Duration>,
     ) -> Result<ListToolsResult> {
-        self.send_request::<ListToolsRequest>(params).await
+        self.send_request::<ListToolsRequest>(params, timeout).await
     }
 
     /// Convenience wrapper around `tools/call`.
@@ -254,10 +286,11 @@ impl McpClient {
         &self,
         name: String,
         arguments: Option<serde_json::Value>,
+        timeout: Option<Duration>,
     ) -> Result<mcp_types::CallToolResult> {
         let params = CallToolRequestParams { name, arguments };
         debug!("MCP tool call: {params:?}");
-        self.send_request::<CallToolRequest>(params).await
+        self.send_request::<CallToolRequest>(params, timeout).await
     }
 
     /// Internal helper: route a JSON-RPC *response* object to the pending map.
