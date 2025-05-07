@@ -15,6 +15,9 @@ mod flags;
 mod is_safe_command;
 #[cfg(target_os = "linux")]
 pub mod linux;
+mod mcp_connection_manager;
+pub mod mcp_server_config;
+mod mcp_tool_call;
 mod models;
 pub mod protocol;
 mod safety;
@@ -23,10 +26,3 @@ pub mod util;
 mod zdr_transcript;
 
 pub use codex::Codex;
-
-#[cfg(feature = "cli")]
-mod approval_mode_cli_arg;
-#[cfg(feature = "cli")]
-pub use approval_mode_cli_arg::ApprovalModeCliArg;
-#[cfg(feature = "cli")]
-pub use approval_mode_cli_arg::SandboxPermissionOption;

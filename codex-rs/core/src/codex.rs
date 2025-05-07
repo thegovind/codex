@@ -31,6 +31,8 @@ use tracing::warn;
 use crate::client::ModelClient;
 use crate::client::Prompt;
 use crate::client::ResponseEvent;
+use crate::config::Config;
+use crate::config::ConfigOverrides;
 use crate::error::CodexErr;
 use crate::error::Result as CodexResult;
 use crate::exec::process_exec_tool_call;
@@ -38,6 +40,9 @@ use crate::exec::ExecParams;
 use crate::exec::ExecToolCallOutput;
 use crate::exec::SandboxType;
 use crate::flags::OPENAI_STREAM_MAX_RETRIES;
+use crate::mcp_connection_manager::try_parse_fully_qualified_tool_name;
+use crate::mcp_connection_manager::McpConnectionManager;
+use crate::mcp_tool_call::handle_mcp_tool_call;
 use crate::models::ContentItem;
 use crate::models::FunctionCallOutputPayload;
 use crate::models::ResponseInputItem;
@@ -188,7 +193,7 @@ impl Recorder {
 /// Context for an initialized model agent
 ///
 /// A session has at most 1 running task at a time, and can be interrupted by user input.
-struct Session {
+pub(crate) struct Session {
     client: ModelClient,
     tx_event: Sender<Event>,
     ctrl_c: Arc<Notify>,
@@ -201,6 +206,9 @@ struct Session {
     approval_policy: AskForApproval,
     sandbox_policy: SandboxPolicy,
     writable_roots: Mutex<Vec<PathBuf>>,
+
+    /// Manager for external MCP servers/tools.
+    mcp_connection_manager: McpConnectionManager,
 
     /// External notifier command (will be passed as args to exec()). When
     /// `None` this feature is disabled.
@@ -242,6 +250,14 @@ impl Session {
             if task.sub_id == sub_id {
                 state.current_task.take();
             }
+        }
+    }
+
+    /// Sends the given event to the client and swallows the send event, if
+    /// any, logging it as an error.
+    pub(crate) async fn send_event(&self, event: Event) {
+        if let Err(e) = self.tx_event.send(event).await {
+            error!("failed to send tool call event: {e}");
         }
     }
 
@@ -375,6 +391,17 @@ impl Session {
         }
     }
 
+    pub async fn call_tool(
+        &self,
+        server: &str,
+        tool: &str,
+        arguments: Option<serde_json::Value>,
+    ) -> anyhow::Result<mcp_types::CallToolResult> {
+        self.mcp_connection_manager
+            .call_tool(server, tool, arguments)
+            .await
+    }
+
     pub fn abort(&self) {
         info!("Aborting existing session");
         let mut state = self.state.lock().unwrap();
@@ -433,7 +460,7 @@ impl State {
 }
 
 /// A series of Turns in response to user input.
-struct AgentTask {
+pub(crate) struct AgentTask {
     sess: Arc<Session>,
     sub_id: String,
     handle: AbortHandle,
@@ -554,6 +581,26 @@ async fn submission_loop(
                 };
 
                 let writable_roots = Mutex::new(get_writable_roots(&cwd));
+
+                // Load config to initialize the MCP connection manager.
+                let config = match Config::load_with_overrides(ConfigOverrides::default()) {
+                    Ok(cfg) => cfg,
+                    Err(e) => {
+                        error!("Failed to load config for MCP servers: {e:#}");
+                        // Fall back to empty server map so the session can still proceed.
+                        Config::load_default_config_for_test()
+                    }
+                };
+
+                let mcp_connection_manager =
+                    match McpConnectionManager::new(config.mcp_servers.clone()).await {
+                        Ok(mgr) => mgr,
+                        Err(e) => {
+                            error!("Failed to create MCP connection manager: {e:#}");
+                            McpConnectionManager::default()
+                        }
+                    };
+
                 sess = Some(Arc::new(Session {
                     client,
                     tx_event: tx_event.clone(),
@@ -563,6 +610,7 @@ async fn submission_loop(
                     sandbox_policy,
                     cwd,
                     writable_roots,
+                    mcp_connection_manager,
                     notify,
                     state: Mutex::new(state),
                 }));
@@ -753,11 +801,14 @@ async fn run_turn(
     } else {
         None
     };
+
+    let extra_tools = sess.mcp_connection_manager.list_all_tools();
     let prompt = Prompt {
         input,
         prev_id,
         instructions,
         store,
+        extra_tools,
     };
 
     let mut retries = 0;
@@ -1141,13 +1192,20 @@ async fn handle_function_call(
             }
         }
         _ => {
-            // Unknown function: reply with structured failure so the model can adapt.
-            ResponseInputItem::FunctionCallOutput {
-                call_id,
-                output: crate::models::FunctionCallOutputPayload {
-                    content: format!("unsupported call: {}", name),
-                    success: None,
-                },
+            match try_parse_fully_qualified_tool_name(&name) {
+                Some((server, tool_name)) => {
+                    handle_mcp_tool_call(sess, &sub_id, call_id, server, tool_name, arguments).await
+                }
+                None => {
+                    // Unknown function: reply with structured failure so the model can adapt.
+                    ResponseInputItem::FunctionCallOutput {
+                        call_id,
+                        output: crate::models::FunctionCallOutputPayload {
+                            content: format!("unsupported call: {}", name),
+                            success: None,
+                        },
+                    }
+                }
             }
         }
     }
