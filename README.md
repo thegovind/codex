@@ -397,7 +397,7 @@ Below is a comprehensive example of `config.json` with multiple custom providers
     },
     "azure": {
       "name": "AzureOpenAI",
-      "baseURL": "https://YOUR_PROJECT_NAME.openai.azure.com",
+      "baseURL": "https://YOUR_PROJECT_NAME.openai.azure.com/openai",
       "envKey": "AZURE_OPENAI_API_KEY"
     },
     "openrouter": {
