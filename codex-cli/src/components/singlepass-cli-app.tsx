@@ -24,7 +24,6 @@ import { zodResponseFormat } from "openai/helpers/zod";
 import path from "path";
 import React, { useEffect, useState, useRef } from "react";
 
-
 /** Maximum number of characters allowed in the context passed to the model. */
 const MAX_CONTEXT_CHARACTER_LIMIT = 2_000_000;
 

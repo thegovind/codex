@@ -1,12 +1,12 @@
 import type { AppConfig } from "./config.js";
 
-import { 
-  getBaseUrl, 
-  getApiKey, 
-  AZURE_OPENAI_API_VERSION, 
+import {
+  getBaseUrl,
+  getApiKey,
+  AZURE_OPENAI_API_VERSION,
   OPENAI_TIMEOUT_MS,
   OPENAI_ORGANIZATION,
-  OPENAI_PROJECT
+  OPENAI_PROJECT,
 } from "./config.js";
 import OpenAI, { AzureOpenAI } from "openai";
 
@@ -17,11 +17,13 @@ type OpenAIClientConfig = {
 /**
  * Creates an OpenAI client instance based on the provided configuration.
  * Handles both standard OpenAI and Azure OpenAI configurations.
- * 
+ *
  * @param config The configuration containing provider information
  * @returns An instance of either OpenAI or AzureOpenAI client
  */
-export function createOpenAIClient(config: OpenAIClientConfig | AppConfig): OpenAI | AzureOpenAI {
+export function createOpenAIClient(
+  config: OpenAIClientConfig | AppConfig,
+): OpenAI | AzureOpenAI {
   const headers: Record<string, string> = {};
   if (OPENAI_ORGANIZATION) {
     headers["OpenAI-Organization"] = OPENAI_ORGANIZATION;
@@ -46,4 +48,4 @@ export function createOpenAIClient(config: OpenAIClientConfig | AppConfig): Open
     timeout: OPENAI_TIMEOUT_MS,
     defaultHeaders: headers,
   });
-} 
+}
