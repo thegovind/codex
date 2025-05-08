@@ -338,6 +338,7 @@ export class AgentLoop {
             : {}),
           ...(OPENAI_PROJECT ? { "OpenAI-Project": OPENAI_PROJECT } : {}),
         },
+        httpAgent: PROXY_URL ? new HttpsProxyAgent(PROXY_URL) : undefined,
         ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
       });
     }
