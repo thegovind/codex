@@ -1,0 +1,37 @@
+[package]
+name = "sidecar-proxy"
+version = "0.1.0"
+edition = "2021"
+authors = ["Devin AI <devin-ai-integration[bot]@users.noreply.github.com>"]
+description = "High-performance Rust sidecar proxy for autonomous service mesh operations"
+license = "MIT"
+
+# Single binary crate - no workspace needed
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+hyper = { version = "1.0", features = ["full"] }
+tower = "0.4"
+tower-service = "0.3"
+bytes = "1.0"
+futures = "0.3"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+clap = { version = "4.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+anyhow = "1.0"
+thiserror = "1.0"
+async-trait = "0.1"
+dashmap = "5.0"
+parking_lot = "0.12"
+reqwest = { version = "0.11", features = ["json"] }
+fastrand = "2.0"
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Additional dependencies for enhanced functionality
+hyper-util = { version = "0.1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["io"] }
+http-body-util = "0.1"
